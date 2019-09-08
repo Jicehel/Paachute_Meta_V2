@@ -49,8 +49,8 @@ uint16_t minHighscore;
 int16_t  misses;
 int16_t  moveTick;
 int16_t  spawnDelay;
-uint8_t  spawnCount;
-uint8_t  speedmax;
+int8_t  spawnCount;
+int8_t  speedmax;
 uint8_t  manage_joystick;
 uint8_t  nb_Parachutes_launched;
 int8_t   parachutes[10];
@@ -271,6 +271,28 @@ void update() {
     }
     moveTick = speedmax - (score / 100);
   }
+  debug("Fin update");
+}
+
+void debug(char* message) {
+  SerialUSB.print(message);
+  SerialUSB.print(" - nb_Parachutes_launched : ");
+  SerialUSB.print(nb_Parachutes_launched);
+  SerialUSB.print(" - moveTick: ");
+  SerialUSB.print(moveTick);
+  SerialUSB.print(" - spawnCount: ");
+  SerialUSB.println(spawnCount);
+
+  uint8_t compteur;
+  SerialUSB.print("Parachute : ");
+  for (compteur = 0 ; compteur < nb_Parachutes_launched ; compteur++)  {
+    SerialUSB.print("compteur: ");
+    SerialUSB.print(compteur);
+    SerialUSB.print(" - ");
+    SerialUSB.print(parachutes[compteur]);
+    SerialUSB.print("; ");
+  }
+  SerialUSB.println("");
 }
 
 void anim_shark() {
@@ -283,6 +305,7 @@ void anim_shark() {
       if (shark_anim > -1) gb.sound.playTick();
     }
     // SerialUSB.println(shark_anim);
+    debug ("Fin anim shark");
   }
 }
 
@@ -307,6 +330,7 @@ void test_Barque(uint8_t colonne, uint8_t para_courant) {
     flooded_anim = 2 - colonne;
     shark_anim = 1 - colonne;
   }
+  debug ("Fin test Barque");
 }
 
 void anim_para() {
@@ -327,6 +351,7 @@ void anim_para() {
       }
     }
   }
+  debug ("Fin anim para");
 }
 
 
@@ -375,8 +400,8 @@ void draw() {
     }
 
     // then draw para
-     uint8_t compteur;
-     for (compteur = 0 ; compteur < nb_Parachutes_launched ; compteur++) drawSprite(para[parachutes[compteur]], sliceY, buffer);
+    uint8_t compteur;
+    for (compteur = 0 ; compteur < nb_Parachutes_launched ; compteur++) drawSprite(para[parachutes[compteur]], sliceY, buffer);
 
     // then daw flooded
     if (flooded_anim > -1) drawSprite(flooded[flooded_anim], sliceY, buffer);
