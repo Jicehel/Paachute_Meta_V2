@@ -49,8 +49,8 @@ uint16_t minHighscore;
 int16_t  misses;
 int16_t  moveTick;
 int16_t  spawnDelay;
-int8_t  spawnCount;
-int8_t  speedmax;
+int8_t   spawnCount;
+int8_t   speedmax;
 uint8_t  manage_joystick;
 uint8_t  nb_Parachutes_launched;
 int8_t   parachutes[10];
@@ -120,6 +120,11 @@ Sprite shark[] = {
   { SC_B, 89 , 107,  25, 16 }   //  4
 };
 
+// the sprite pause
+Sprite Sprite_pause = { SC_A, 1, 8, 28, 7 };
+
+// the sprite Game Over
+Sprite Sprite_gameOver = { SC_A, 1, 17, 53, 7 };
 
 // the sprites of the para
 Sprite para[] = {
@@ -189,7 +194,7 @@ void setup() {
   // default screen buffer won't be used
   // so it must be set to 0x0 pixels
   gb.display.init(0, 0, ColorMode::rgb565);
-  initGame();
+  gameState = STATE_HOME;
 }
 
 
@@ -201,6 +206,7 @@ void initGame() {
 
   gb.lights.fill(BLACK);
   gameState = STATE_RUN;
+  gb.sound.playTick();
   misses = 0;
   score = 0;
   player.sprite_index = 0;
@@ -226,11 +232,48 @@ void initGame() {
 // -------------------------------------------------------------------------
 
 void loop() {
+
   gb.waitForUpdate();
-  // a classic sequence :)
-  getUserInput();
-  update();
-  draw();
+
+  switch (gameState) {
+
+    case STATE_HOME: // Start screen
+      if (gb.buttons.released(BUTTON_A) || gb.buttons.released(BUTTON_B)) {
+        initGame();
+      } else {
+        drawScreen();
+      }
+      break;
+
+    case STATE_RUN: // Game running
+      // a classic sequence :)
+      if (misses == 3) gameState = STATE_GAME_OVER;
+      else {
+        getUserInput();
+        update();
+        draw();
+      }
+      break;
+
+    case STATE_GAME_OVER:
+      if (gb.buttons.released(BUTTON_A) || gb.buttons.released(BUTTON_B)) {
+        gameState = STATE_HOME;
+        gb.sound.playTick();
+      } else {
+        drawScreen();
+      }
+      break;
+
+    case STATE_PAUSE: // Pause Game
+      if (gb.buttons.released(BUTTON_A) || gb.buttons.released(BUTTON_B)) {
+        gameState = STATE_RUN;
+        gb.sound.playTick();
+      } else {
+        drawScreen();
+      }
+      break;
+
+  }
 }
 
 // -------------------------------------------------------------------------
@@ -245,6 +288,10 @@ void getUserInput() {
     player.sprite_index++;
     gb.sound.playTick();
   }
+  if (gb.buttons.released(BUTTON_A) || gb.buttons.released(BUTTON_B)) {
+    gameState = STATE_PAUSE;
+    gb.sound.playCancel();
+  }
 }
 
 // -------------------------------------------------------------------------
@@ -254,6 +301,7 @@ void getUserInput() {
 void update() {
   uint8_t temp;
   anim_shark();
+  anim_helico();
   anim_para();   // Animation du parachutiste
   // anim_helico(); // Animtion de l'hélicoptère
   if (flooded_anim > -1) anim_flooded();
@@ -271,10 +319,9 @@ void update() {
     }
     moveTick = speedmax - (score / 100);
   }
-  debug("Fin update");
 }
 
-void debug(char* message) {
+/* void debug(char* message) {
   SerialUSB.print(message);
   SerialUSB.print(" - nb_Parachutes_launched : ");
   SerialUSB.print(nb_Parachutes_launched);
@@ -293,20 +340,23 @@ void debug(char* message) {
     SerialUSB.print("; ");
   }
   SerialUSB.println("");
-}
+  } */
 
 void anim_shark() {
   if (moveTick <= 0) {
-    // SerialUSB.print("anim_shark  - ");
-    // SerialUSB.print(shark_anim);
-    if ((shark_anim >  2) || ((shark_anim > 3) && (flooded_anim > -1))) shark_anim = -2;
+    if ((shark_anim >  2) || ((shark_anim > 4) && (flooded_anim > -1))) shark_anim = -2;
     if ((shark_anim > -2) || ((shark_anim == -2) && (random(0, 50) < 3))) {
       shark_anim++;
       if (shark_anim > -1) gb.sound.playTick();
     }
-    // SerialUSB.println(shark_anim);
-    debug ("Fin anim shark");
   }
+}
+
+void anim_helico() {
+
+  if (helico_anim >  2) helico_anim = -1;
+  helico_anim++;
+
 }
 
 void anim_flooded() {
@@ -325,12 +375,13 @@ void test_Barque(uint8_t colonne, uint8_t para_courant) {
   }
   if (colonne == 1 + player.sprite_index ) {
     score ++;
+    gb.sound.playOK();
   } else {
     misses++;
+    gb.sound.playCancel();
     flooded_anim = 2 - colonne;
-    shark_anim = 1 - colonne;
+    shark_anim = 2 - colonne;
   }
-  debug ("Fin test Barque");
 }
 
 void anim_para() {
@@ -351,14 +402,73 @@ void anim_para() {
       }
     }
   }
-  debug ("Fin anim para");
 }
-
 
 
 // -------------------------------------------------------------------------
 // Graphic rendering
 // -------------------------------------------------------------------------
+
+void drawScreen() {
+  // the number of horizontal slices to be cut is calculated
+  uint8_t slices = SCREEN_HEIGHT / SLICE_HEIGHT;
+  // declares a pointer that will alternate between the two memory buffers
+  uint16_t* buffer;
+  // declares the top border of current slice
+  uint8_t sliceY;
+  // then we go through each slice one by one
+  for (uint8_t sliceIndex = 0; sliceIndex < slices; sliceIndex++) {
+    // buffers are switched according to the parity of sliceIndex
+    buffer = sliceIndex % 2 == 0 ? buffer1 : buffer2;
+    // the top border of the current slice is calculated
+    sliceY = sliceIndex * SLICE_HEIGHT;
+
+    // starts by drawing the background
+    switch (gameState) {
+
+      case STATE_HOME: // Start screen
+        if (gb.buttons.released(BUTTON_A) || gb.buttons.released(BUTTON_B)) {
+          initGame();
+          return;
+        } else {
+          memcpy(buffer, SPLATCHSCREEN + sliceY * SCREEN_WIDTH, 2 * SCREEN_WIDTH * SLICE_HEIGHT);
+        }
+        break;
+
+      case STATE_GAME_OVER:
+        if (gb.buttons.released(BUTTON_A) || gb.buttons.released(BUTTON_B)) {
+          gameState = STATE_HOME;
+          return;
+        } else {
+          memcpy(buffer, BACKGROUND + sliceY * SCREEN_WIDTH, 2 * SCREEN_WIDTH * SLICE_HEIGHT);
+          // and finally draws the pause sprite
+          drawSpriteXY(Sprite_gameOver, sliceY, buffer, 53, 60);
+        }
+        break;
+
+      case STATE_PAUSE:
+        if (gb.buttons.released(BUTTON_A) || gb.buttons.released(BUTTON_B)) {
+          gameState = STATE_RUN;
+          return;
+        } else {
+          memcpy(buffer, BACKGROUND + sliceY * SCREEN_WIDTH, 2 * SCREEN_WIDTH * SLICE_HEIGHT);
+          // and finally draws the pause sprite
+          drawSpriteXY(Sprite_pause, sliceY, buffer, 66, 60);
+        }
+        break;
+    }
+
+    // then we make sure that the sending of the previous buffer
+    // to the DMA controller has taken place
+    if (sliceIndex != 0) waitForPreviousDraw();
+    // after which we can then send the current buffer
+    customDrawBuffer(0, sliceY, buffer, SCREEN_WIDTH, SLICE_HEIGHT);
+  }
+
+  // always wait until the DMA transfer is completed
+  // for the last slice before entering the next cycle
+  waitForPreviousDraw();
+}
 
 void draw() {
   // the number of horizontal slices to be cut is calculated
@@ -385,6 +495,15 @@ void draw() {
     // then draws helico (a static sprite)
     drawSprite(helico, sliceY, buffer);
 
+    // then draw blades
+    if ((helico_anim == 1) || (helico_anim == 3)) {
+      drawSprite(blades[0], sliceY, buffer);
+      drawSprite(blades[1], sliceY, buffer);
+    }
+    if (helico_anim == 2) {
+      drawSprite(blades[2], sliceY, buffer);
+      drawSprite(blades[3], sliceY, buffer);
+    }
     // then draw shark if needed
     if (shark_anim > -1) drawSprite(shark[shark_anim], sliceY, buffer);
 
@@ -403,11 +522,14 @@ void draw() {
     uint8_t compteur;
     for (compteur = 0 ; compteur < nb_Parachutes_launched ; compteur++) drawSprite(para[parachutes[compteur]], sliceY, buffer);
 
-    // then daw flooded
+    // then draw flooded
     if (flooded_anim > -1) drawSprite(flooded[flooded_anim], sliceY, buffer);
 
     // and finally draws the player's avatar
     drawSprite(barque[player.sprite_index], sliceY, buffer);
+
+    // then draw score
+    drawScore(score, sliceY, buffer);
 
     // then we make sure that the sending of the previous buffer
     // to the DMA controller has taken place
@@ -452,6 +574,93 @@ void drawSprite(Sprite sprite, uint8_t sliceY, uint16_t* buffer) {
   }
 }
 
+void drawSpriteXY(Sprite sprite, uint8_t sliceY, uint16_t* buffer, uint8_t x, uint8_t y) {
+  // we check first of all that the intersection between
+  // the sprite and the current slice is not empty
+  if (((sliceY < (y + sprite.h)) && (y  <= sliceY + SLICE_HEIGHT))) {
+    // determines the boundaries of the sprite surface within the current slice
+    uint8_t  ymin = y < sliceY ? sliceY : y;
+    uint8_t  ymax = y + sprite.h >= sliceY + SLICE_HEIGHT ? sliceY + SLICE_HEIGHT - 1 : y + sprite.h - 1;
+    uint8_t  px, py, temp;
+    uint16_t color;
+    // goes through the sprite pixels to be drawn
+    temp = 0;
+    for (py = ymin; py <= ymax; py++) {
+      for (px = 0; px < sprite.w; px++) {
+        // picks the pixel color from the spritesheet
+        if (sprite.spritesheet == SC_A) {
+          color = SPRITESHEET_A[sprite.x + px + (sprite.y + temp) * SCREEN_WIDTH];
+        } else {
+          color = SPRITESHEET_B[sprite.x + px + (sprite.y + temp) * SCREEN_WIDTH];
+        }
+        // and if it is different from the transparency color
+        if (color != TRANS_COLOR) {
+          // copies the color code into the rendering buffer
+          buffer[x + px + (py - sliceY) * SCREEN_WIDTH] = color;
+        }
+      }
+      temp++;
+    }
+  }
+}
+
+
+void drawScore(uint16_t Ascore, uint8_t sliceY, uint16_t* buffer) {
+  // we check first of all that the intersection between
+  // the sprite and the current slice is not empty
+  if (sliceY < 20 && sliceY + SLICE_HEIGHT > 11 ) {
+    // determines the boundaries of the sprite surface within the current slice
+    uint8_t  xmin = 12;
+    uint8_t  ymin = 12 < sliceY ? sliceY : 12;
+    uint8_t  ymax = 19 >= sliceY + SLICE_HEIGHT ? sliceY + SLICE_HEIGHT - 1 : 18;
+    uint8_t  px, py;
+    uint16_t temp, temp2;
+    uint16_t color;
+    // goes through the sprite pixels to be drawn
+    for (py = ymin; py <= ymax; py++) {
+      for (px = 1; px <= 5; px++) {
+        // draw thousands
+        temp = Ascore / 1000;
+        temp2 = Ascore % 1000;
+        // picks the pixel color from the spritesheet
+        color = SPRITESHEET_A[px + 6 * temp + (py - 11) * SCREEN_WIDTH];
+        // and if it is different from the transparency color
+        if (color != TRANS_COLOR) {
+          // copies the color code into the rendering buffer
+          buffer[xmin + px + (py - sliceY) * SCREEN_WIDTH] = color;
+        }
+        // draw hundreds
+        temp = temp2 / 100;
+        temp2 = temp2 % 100;
+        // picks the pixel color from the spritesheet
+        color = SPRITESHEET_A[px + 6 * temp + (py - 11) * SCREEN_WIDTH];
+        // and if it is different from the transparency color
+        if (color != TRANS_COLOR) {
+          // copies the color code into the rendering buffer
+          buffer[xmin + 6 + px + (py - sliceY) * SCREEN_WIDTH] = color;
+        }
+        // draw decades
+        temp = temp2 / 10;
+        temp2 = temp2 % 10;
+        // picks the pixel color from the spritesheet
+        color = SPRITESHEET_A[px + 6 * temp + (py - 11) * SCREEN_WIDTH];
+        // and if it is different from the transparency color
+        if (color != TRANS_COLOR) {
+          // copies the color code into the rendering buffer
+          buffer[xmin + 12 + px + (py - sliceY) * SCREEN_WIDTH] = color;
+        }
+        // draw units
+        // picks the pixel color from the spritesheet
+        color = SPRITESHEET_A[px + 6 * temp2 + (py - 11) * SCREEN_WIDTH];
+        // and if it is different from the transparency color
+        if (color != TRANS_COLOR) {
+          // copies the color code into the rendering buffer
+          buffer[xmin + 18 + px + (py - sliceY) * SCREEN_WIDTH] = color;
+        }
+      }
+    }
+  }
+}
 // -------------------------------------------------------------------------
 // Memory transfer to DMA controller
 // -------------------------------------------------------------------------
