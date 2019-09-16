@@ -121,7 +121,7 @@ Sprite shark[] = {
 };
 
 // the sprite pause
-Sprite Sprite_pause = { SC_A, 1, 8, 28, 7 };
+Sprite Sprite_pause = { SC_A, 1, 9, 28, 7 };
 
 // the sprite Game Over
 Sprite Sprite_gameOver = { SC_A, 1, 17, 53, 7 };
@@ -212,7 +212,7 @@ void initGame() {
   player.sprite_index = 0;
   spawnDelay = 4;   // Delay before next possibility to launch a para
   shark_anim = -2;
-  flooded_anim = -1;
+  flooded_anim = -2;
   speedmax = 25;   // Nombre de cycles avant mise à jour de la boucle
   helico_anim = 0;
   player.sprite_index = 0;
@@ -258,7 +258,7 @@ void loop() {
     case STATE_GAME_OVER:
       if (gb.buttons.released(BUTTON_A) || gb.buttons.released(BUTTON_B)) {
         gameState = STATE_HOME;
-        gb.sound.playTick();
+        gb.sound.play("GameOver.wav");
       } else {
         drawScreen();
       }
@@ -267,7 +267,7 @@ void loop() {
     case STATE_PAUSE: // Pause Game
       if (gb.buttons.released(BUTTON_A) || gb.buttons.released(BUTTON_B)) {
         gameState = STATE_RUN;
-        gb.sound.playTick();
+        gb.sound.play("Pause.wav");
       } else {
         drawScreen();
       }
@@ -304,7 +304,7 @@ void update() {
   anim_helico();
   anim_para();   // Animation du parachutiste
   // anim_helico(); // Animtion de l'hélicoptère
-  if (flooded_anim > -1) anim_flooded();
+  if (flooded_anim > -2) anim_flooded();
   if (moveTick > 0) {
     moveTick --;
   } else {
@@ -318,6 +318,12 @@ void update() {
       spawnCount = spawnDelay - int(score / 100);
     }
     moveTick = speedmax - (score / 100);
+  }
+  if ((score > 0)  && (score % 500 == 0)){
+    if (misses > 0) {
+      misses--;
+      gb.sound.play("Chance.wav");
+    }
   }
 }
 
@@ -344,26 +350,24 @@ void update() {
 
 void anim_shark() {
   if (moveTick <= 0) {
-    if ((shark_anim >  2) || ((shark_anim > 4) && (flooded_anim > -1))) shark_anim = -2;
     if ((shark_anim > -2) || ((shark_anim == -2) && (random(0, 50) < 3))) {
       shark_anim++;
       if (shark_anim > -1) gb.sound.playTick();
+    }
+    if (shark_anim > 4) {
+      shark_anim = -2;
+      if (flooded_anim > 4) flooded_anim = -2;
     }
   }
 }
 
 void anim_helico() {
-
   if (helico_anim >  2) helico_anim = -1;
   helico_anim++;
-
 }
 
 void anim_flooded() {
-  if (moveTick <= 0) {
-    if (flooded_anim < 5) flooded_anim++;
-    else flooded_anim = -1;
-  }
+  if ((moveTick <= 0) && (flooded_anim < 6)) flooded_anim++;
 }
 
 void test_Barque(uint8_t colonne, uint8_t para_courant) {
@@ -442,7 +446,7 @@ void drawScreen() {
         } else {
           memcpy(buffer, BACKGROUND + sliceY * SCREEN_WIDTH, 2 * SCREEN_WIDTH * SLICE_HEIGHT);
           // and finally draws the pause sprite
-          drawSpriteXY(Sprite_gameOver, sliceY, buffer, 53, 60);
+          drawText(Sprite_gameOver, sliceY, buffer, 53, 60);
         }
         break;
 
@@ -453,7 +457,7 @@ void drawScreen() {
         } else {
           memcpy(buffer, BACKGROUND + sliceY * SCREEN_WIDTH, 2 * SCREEN_WIDTH * SLICE_HEIGHT);
           // and finally draws the pause sprite
-          drawSpriteXY(Sprite_pause, sliceY, buffer, 66, 60);
+          drawText(Sprite_pause, sliceY, buffer, 66, 60);
         }
         break;
     }
@@ -504,9 +508,7 @@ void draw() {
       drawSprite(blades[2], sliceY, buffer);
       drawSprite(blades[3], sliceY, buffer);
     }
-    // then draw shark if needed
-    if (shark_anim > -1) drawSprite(shark[shark_anim], sliceY, buffer);
-
+ 
     if (misses > 0) {
       drawSprite(miss[0], sliceY, buffer);
       drawSprite(miss[1], sliceY, buffer);
@@ -523,7 +525,10 @@ void draw() {
     for (compteur = 0 ; compteur < nb_Parachutes_launched ; compteur++) drawSprite(para[parachutes[compteur]], sliceY, buffer);
 
     // then draw flooded
-    if (flooded_anim > -1) drawSprite(flooded[flooded_anim], sliceY, buffer);
+    if ((flooded_anim > -1) && (flooded_anim < 6)) drawSprite(flooded[flooded_anim], sliceY, buffer);
+
+    // then draw shark if needed
+    if ((shark_anim > -1)&& (flooded_anim < 6)) drawSprite(shark[shark_anim], sliceY, buffer);
 
     // and finally draws the player's avatar
     drawSprite(barque[player.sprite_index], sliceY, buffer);
@@ -574,36 +579,28 @@ void drawSprite(Sprite sprite, uint8_t sliceY, uint16_t* buffer) {
   }
 }
 
-void drawSpriteXY(Sprite sprite, uint8_t sliceY, uint16_t* buffer, uint8_t x, uint8_t y) {
-  // we check first of all that the intersection between
-  // the sprite and the current slice is not empty
-  if (((sliceY < (y + sprite.h)) && (y  <= sliceY + SLICE_HEIGHT))) {
-    // determines the boundaries of the sprite surface within the current slice
-    uint8_t  ymin = y < sliceY ? sliceY : y;
-    uint8_t  ymax = y + sprite.h >= sliceY + SLICE_HEIGHT ? sliceY + SLICE_HEIGHT - 1 : y + sprite.h - 1;
-    uint8_t  px, py, temp;
+void drawText(Sprite sprite, uint8_t sliceY, uint16_t* buffer, uint8_t x, uint8_t y) {
+  if (sliceY < y + sprite.h && y < sliceY + SLICE_HEIGHT) {
+    uint8_t xmin = x;
+    uint8_t xmax = x + sprite.w - 1;
+    uint8_t ymin = y < sliceY ? sliceY : y;
+    uint8_t ymax = y + sprite.h >= sliceY + SLICE_HEIGHT ? sliceY + SLICE_HEIGHT - 1 : y + sprite.h - 1;
+
+    uint8_t  px, py, sx, sy;
     uint16_t color;
-    // goes through the sprite pixels to be drawn
-    temp = 0;
+
     for (py = ymin; py <= ymax; py++) {
-      for (px = 0; px < sprite.w; px++) {
-        // picks the pixel color from the spritesheet
-        if (sprite.spritesheet == SC_A) {
-          color = SPRITESHEET_A[sprite.x + px + (sprite.y + temp) * SCREEN_WIDTH];
-        } else {
-          color = SPRITESHEET_B[sprite.x + px + (sprite.y + temp) * SCREEN_WIDTH];
-        }
-        // and if it is different from the transparency color
+      sy = py - y + sprite.y;
+      for (px = xmin; px <= xmax; px++) {
+        sx = px - xmin + sprite.x;
+        color = SPRITESHEET_A[sx + sy * SCREEN_WIDTH];
         if (color != TRANS_COLOR) {
-          // copies the color code into the rendering buffer
-          buffer[x + px + (py - sliceY) * SCREEN_WIDTH] = color;
+          buffer[px + (py - sliceY) * SCREEN_WIDTH] = color;
         }
       }
-      temp++;
     }
   }
 }
-
 
 void drawScore(uint16_t Ascore, uint8_t sliceY, uint16_t* buffer) {
   // we check first of all that the intersection between

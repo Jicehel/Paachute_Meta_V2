@@ -1,5 +1,5 @@
-#ifndef GAME_AND_WATCH_DEMO_BACKGROUND
-#define GAME_AND_WATCH_DEMO_BACKGROUND
+#ifndef PARACHUTE_BACKGROUND
+#define PARACHUTE_BACKGROUND
 
 const uint16_t BACKGROUND[] = {  // colormap
  // frame 1/1
