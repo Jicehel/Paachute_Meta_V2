@@ -290,7 +290,7 @@ void getUserInput() {
   }
   if (gb.buttons.released(BUTTON_A) || gb.buttons.released(BUTTON_B)) {
     gameState = STATE_PAUSE;
-    gb.sound.playCancel();
+    gb.sound.play("Pause.wav");
   }
 }
 
