@@ -8,159 +8,27 @@
 // structure of games like Nintendo's Game & Watch console series, in High
 // Definition on the META.
 // -------------------------------------------------------------------------
+// Special thanks to Pharap for his help to improve the source
+// -------------------------------------------------------------------------
 
 // includes the official library
 #include <Gamebuino-Meta.h>
 
-// includes assets
-#include "background.h"
-#include "spritesheet_A.h"
-#include "spritesheet_B.h"
-#include "splatchscreen.h"
-
-// -------------------------------------------------------------------------
-// Global constants
-// -------------------------------------------------------------------------
-
-const uint8_t  SCREEN_WIDTH  = 160;
-const uint8_t  SCREEN_HEIGHT = 128;
-const uint8_t  SLICE_HEIGHT  = 8;
-const uint16_t TRANS_COLOR   = 0xdfff;
-
-// All possible game state
-
-const uint8_t  STATE_NOT_DEFINED = -1;   // Undefined state
-const uint8_t  STATE_HOME = 0;           // Start screen
-// const uint8_t  STATE_LAUNCH = 1;         // Launch game
-const uint8_t  STATE_RUN = 2;            // Game run
-const uint8_t  STATE_GAME_OVER = 3;      // Game over
-const uint8_t  STATE_PAUSE = 4;          // Pause
-
-// Define value for spitesheet to use
-
-const uint8_t  SC_A = 0;
-const uint8_t  SC_B = 1;
-
-// Define global variables
-uint8_t  gameState;
-uint8_t  oldGameState;
-uint16_t score;
-uint16_t minHighscore;
-int16_t  misses;
-int16_t  moveTick;
-int16_t  spawnDelay;
-int8_t   spawnCount;
-int8_t   speedmax;
-uint8_t  manage_joystick;
-uint8_t  nb_Parachutes_launched;
-int8_t   parachutes[10];
-int8_t   helico_anim;
-int8_t   shark_anim;
-int8_t   flooded_anim;
-uint8_t  vitesse_pales;
-
-// -------------------------------------------------------------------------
-// Sprites
-// -------------------------------------------------------------------------
-// The surface of the spritesheet is deliberately not optimized here to
-// facilitate positioning calculations at the time of rendering.
-// -------------------------------------------------------------------------
-
-// each sprite is characterized by its dimensions and coordinates
-// on the spritesheet
-struct Sprite {
-  uint8_t spritesheet;
-  uint8_t x, y;
-  uint8_t w, h;
-};
-
-// a static sprite for the Helicopter
-Sprite helico = { SC_B, 125, 5, 30, 25 };
-
-
-// Spites of the blades of the Helicopter
-Sprite blades[] = {
-  { SC_A, 120,  6,  9, 1 },  //  0
-  { SC_A, 132,  6,  9, 1 },  //  1
-  { SC_A, 135, 10,  9, 1 },  //  2
-  { SC_A, 147, 10,  9, 1 }   //  3
-};
-
-// the different postures and positions of the player's avatar
-Sprite barque[] = {
-  { SC_B, 16, 80,  27, 20 },  //  0
-  { SC_A, 47, 80,  28, 24 },  //  1
-  { SC_B, 79, 80,  31, 19 }   //  2
-};
-
-// the misses sprites
-Sprite miss[] = {
-  { SC_A, 120, 86,  22, 7  },  //  0
-  { SC_A, 117, 95,  13, 11 },  //  1
-  { SC_A, 131, 95,  13, 11 },  //  2
-  { SC_A, 145, 95,  13, 11 }   //  3
-};
-
-// the sprites of the flooded
-Sprite flooded[] = {
-  { SC_A, 88 , 103,  20, 10 },  //  0
-  { SC_B, 56 , 103,  21, 11 },  //  1
-  { SC_A, 26 , 102,  20, 12 },  //  2
-  { SC_A, 46 , 115,  13,  8 },  //  3
-  { SC_A, 74 , 113,  13,  9 },  //  4
-  { SC_A, 116, 109,  12, 14 }   //  5
-};
-
-// the sprites of the shark
-Sprite shark[] = {
-  { SC_A, 79 , 106,  7 ,  6 },  //  0
-  { SC_A, 47 , 106,  7 ,  6 },  //  1
-  { SC_A, 32 , 116,  6 ,  6 },  //  2
-  { SC_A, 60 , 115,  7 ,  7 },  //  3
-  { SC_B, 89 , 107,  25, 16 }   //  4
-};
-
-// the sprite pause
-Sprite Sprite_pause = { SC_A, 1, 9, 28, 7 };
-
-// the sprite Game Over
-Sprite Sprite_gameOver = { SC_A, 1, 17, 53, 7 };
-
-// the sprites of the para
-Sprite para[] = {
-  // col 1
-  { SC_A, 106,  5,  9, 13 },  //  0
-  { SC_B,  90,  8, 14, 14 },  //  1
-  { SC_A,  76,  8, 15, 21 },  //  2
-  { SC_B,  63, 14, 11, 25 },  //  3
-  { SC_A,  48, 33, 15, 22 },  //  4
-  { SC_B,  36, 52, 18, 22 },  //  5
-  { SC_A,  28, 72, 19, 22 },  //  6
-  // col 2
-  { SC_A, 112, 19,  10, 12 },  //  7
-  { SC_B, 100, 17,  15, 14 },  //  8
-  { SC_A,  89, 18,  11, 27 },  //  9
-  { SC_B,  74, 32,  15, 23 },  //  10
-  { SC_A,  64, 48,  17, 24 },  //  11
-  { SC_B,  59, 72,  19, 22 },  //  12
-  // col 3
-  { SC_A, 124, 30,  10, 11 },  //  13
-  { SC_B, 114, 28,  11, 18 },  //  14
-  { SC_A, 100, 32,  14, 21 },  //  15
-  { SC_B,  92, 49,  18, 23 },  //  16
-  { SC_A,  93, 72,  18, 22 }   //  17
-};
+// includes other parts of pogram
+#include "Global.h"
+#include "Pictures.h"
+#include "Sprites.h"
 
 // -------------------------------------------------------------------------
 // Player definition
 // -------------------------------------------------------------------------
 
 struct Player {
-  uint8_t  sprite_index;
+  uint8_t  spriteIndex;
 };
 
 Player player = {
-  0      // sprite_index
+  0      // spriteIndex 0, the position at the left
 };
 
 // -------------------------------------------------------------------------
@@ -168,8 +36,10 @@ Player player = {
 // -------------------------------------------------------------------------
 
 namespace Gamebuino_Meta {
+
 #define DMA_DESC_COUNT 3
 extern volatile uint32_t dma_desc_free_count;
+
 static inline void wait_for_transfers_done(void) {
   while (dma_desc_free_count < DMA_DESC_COUNT);
 }
@@ -177,8 +47,8 @@ static SPISettings tftSPISettings = SPISettings(24000000, MSBFIRST, SPI_MODE0);
 };
 
 // rendering buffers
-uint16_t buffer1[SCREEN_WIDTH * SLICE_HEIGHT];
-uint16_t buffer2[SCREEN_WIDTH * SLICE_HEIGHT];
+uint16_t buffer1[screenWidth * sliceHeight];
+uint16_t buffer2[screenWidth * sliceHeight];
 
 // flag for an ongoing data transfer
 bool drawPending = false;
@@ -194,7 +64,7 @@ void setup() {
   // default screen buffer won't be used
   // so it must be set to 0x0 pixels
   gb.display.init(0, 0, ColorMode::rgb565);
-  gameState = STATE_HOME;
+  gameState = GameState::stateHome;
 }
 
 
@@ -205,25 +75,22 @@ void setup() {
 void initGame() {
 
   gb.lights.fill(BLACK);
-  gameState = STATE_RUN;
+  gameState = GameState::stateRun;
   gb.sound.playTick();
   misses = 0;
   score = 0;
-  player.sprite_index = 0;
-  spawnDelay = 4;   // Delay before next possibility to launch a para
-  shark_anim = -2;
-  flooded_anim = -2;
-  speedmax = 25;   // Nombre de cycles avant mise à jour de la boucle
-  helico_anim = 0;
-  player.sprite_index = 0;
-  vitesse_pales = 5;
-  moveTick = speedmax;
+  player.spriteIndex = 0;
+  spawnDelay = 4;       // Delay before next possibility to launch a para
+  sharkAnimation = -2;  
+  floodedAnimation = -2;
+  speedMax = 25;   // Number of cycles before update
+  helicopterAnimation = 0;
+  player.spriteIndex = 0;
+  speedBlades = 5;
+  moveTick = speedMax;
   spawnCount = spawnDelay;
-  nb_Parachutes_launched = 0;
-  manage_joystick = 0;
-  for (int i = 0; i < 10; i++) {
-    parachutes[i] = -1;
-  }
+  nbParachutesLaunched = 0;
+  for (auto &value : parachutes) value = -1;
 }
 
 
@@ -237,37 +104,36 @@ void loop() {
 
   switch (gameState) {
 
-    case STATE_HOME: // Start screen
-      if (gb.buttons.released(BUTTON_A) || gb.buttons.released(BUTTON_B)) {
+    case GameState::stateHome: // Start screen
+      if ((gb.buttons.released(BUTTON_A)) || (gb.buttons.released(BUTTON_B))) {
         initGame();
       } else {
         drawScreen();
       }
       break;
 
-    case STATE_RUN: // Game running
+    case GameState::stateRun: // Game running
       // a classic sequence :)
-      if (misses == 3) gameState = STATE_GAME_OVER;
+      if (misses == 3) gameState = GameState::stateGameOver;
       else {
-        getUserInput();
         update();
         draw();
       }
       break;
 
-    case STATE_GAME_OVER:
-      if (gb.buttons.released(BUTTON_A) || gb.buttons.released(BUTTON_B)) {
-        gameState = STATE_HOME;
-        gb.sound.play("GameOver.wav");
+    case GameState::stateGameOver:  // GameOver screen
+      if ((gb.buttons.released(BUTTON_A)) || (gb.buttons.released(BUTTON_B))) {
+        gameState = GameState::stateHome;
+        gb.sound.play("gameOver.wav");
       } else {
         drawScreen();
       }
       break;
 
-    case STATE_PAUSE: // Pause Game
-      if (gb.buttons.released(BUTTON_A) || gb.buttons.released(BUTTON_B)) {
-        gameState = STATE_RUN;
-        gb.sound.play("Pause.wav");
+    case GameState::statePause: // Pause Game
+      if ((gb.buttons.released(BUTTON_A)) || (gb.buttons.released(BUTTON_B))) {
+        gameState = GameState::stateRun;
+        gb.sound.play("pause.wav");
       } else {
         drawScreen();
       }
@@ -276,52 +142,55 @@ void loop() {
   }
 }
 
-// -------------------------------------------------------------------------
-// User interaction
-// -------------------------------------------------------------------------
-
-void getUserInput() {
-  if (gb.buttons.pressed(BUTTON_LEFT) && player.sprite_index > 0)  {
-    player.sprite_index--;
-    gb.sound.playTick();
-  } else if (gb.buttons.pressed(BUTTON_RIGHT) && player.sprite_index < 2) {
-    player.sprite_index++;
-    gb.sound.playTick();
-  }
-  if (gb.buttons.released(BUTTON_A) || gb.buttons.released(BUTTON_B)) {
-    gameState = STATE_PAUSE;
-    gb.sound.play("Pause.wav");
-  }
-}
 
 // -------------------------------------------------------------------------
 // Game logic
 // -------------------------------------------------------------------------
 
 void update() {
-  uint8_t temp;
-  anim_shark();
-  anim_helico();
-  anim_para();   // Animation du parachutiste
-  // anim_helico(); // Animtion de l'hélicoptère
-  if (flooded_anim > -2) anim_flooded();
-  if (moveTick > 0) {
-    moveTick --;
-  } else {
-    spawnCount--;
-    if ((spawnCount < 1) && (random(6 - (score / 200)) < 4)) {
-      temp = int(random(0, 3));
-      if (temp == 0) parachutes[nb_Parachutes_launched] = 0;
-      else if (temp == 1) parachutes[nb_Parachutes_launched] = 7;
-      else if (temp == 2) parachutes[nb_Parachutes_launched] = 13;
-      nb_Parachutes_launched++;
-      spawnCount = spawnDelay - int(score / 100);
-    }
-    moveTick = speedmax - (score / 100);
+
+  // -------------------------------------------------------------------------
+  // User interaction
+  // -------------------------------------------------------------------------
+
+  if ((gb.buttons.pressed(BUTTON_LEFT)) && (player.spriteIndex > 0))  {
+    --player.spriteIndex;
+    gb.sound.playTick();
+  } else if ((gb.buttons.pressed(BUTTON_RIGHT)) && (player.spriteIndex < 2)) {
+    ++player.spriteIndex;
+    gb.sound.playTick();
   }
-  if ((score > 0)  && (score % 500 == 0)){
+  if ((gb.buttons.released(BUTTON_A)) || (gb.buttons.released(BUTTON_B))) {
+    gameState = GameState::statePause;
+    gb.sound.play("pause.wav");
+  }
+
+  // -------------------------------------------------------------------------
+  // Anim objects
+  // -------------------------------------------------------------------------
+
+  animShark();
+  animHelicopter();
+  animPara();       // Animate paratrooper
+  // anim_helico(); // Animtie helicopter
+  if (floodedAnimation > -2) animFlooded(); // Animate Flooded if needed
+  if (moveTick > 0) {
+    --moveTick;
+  } else {
+    --spawnCount;
+    if ((spawnCount < 1) && (random(6 - (score / 200)) < 4)) {   // Check if we launch a new paatrooper
+      uint8_t temp = random(0, 3);
+      if (temp == 0) parachutes[nbParachutesLaunched] = firstSpriteColonne0;
+      else if (temp == 1) parachutes[nbParachutesLaunched] = firstSpriteColonne1;
+      else if (temp == 2) parachutes[nbParachutesLaunched] = firstSpriteColonne2;
+      ++nbParachutesLaunched;
+      spawnCount = spawnDelay - int(score / 60);
+    }
+    moveTick = speedMax - (score / 75);
+  }
+  if ((score > 0)  && (score % 500 == 0)) {
     if (misses > 0) {
-      misses--;
+      --misses;
       gb.sound.play("Chance.wav");
     }
   }
@@ -329,8 +198,8 @@ void update() {
 
 /* void debug(char* message) {
   SerialUSB.print(message);
-  SerialUSB.print(" - nb_Parachutes_launched : ");
-  SerialUSB.print(nb_Parachutes_launched);
+  SerialUSB.print(" - nbParachutesLaunched : ");
+  SerialUSB.print(nbParachutesLaunched);
   SerialUSB.print(" - moveTick: ");
   SerialUSB.print(moveTick);
   SerialUSB.print(" - spawnCount: ");
@@ -338,7 +207,7 @@ void update() {
 
   uint8_t compteur;
   SerialUSB.print("Parachute : ");
-  for (compteur = 0 ; compteur < nb_Parachutes_launched ; compteur++)  {
+  for (compteur = 0 ; compteur < nbParachutesLaunched ; compteur++)  {
     SerialUSB.print("compteur: ");
     SerialUSB.print(compteur);
     SerialUSB.print(" - ");
@@ -348,60 +217,58 @@ void update() {
   SerialUSB.println("");
   } */
 
-void anim_shark() {
+void animShark() {
   if (moveTick <= 0) {
-    if ((shark_anim > -2) || ((shark_anim == -2) && (random(0, 50) < 3))) {
-      shark_anim++;
-      if (shark_anim > -1) gb.sound.playTick();
+    if ((sharkAnimation > -2) || ((sharkAnimation == -2) && (random(0, 50) < 3))) {
+      ++sharkAnimation;
+      if (sharkAnimation > -1) gb.sound.playTick();
     }
-    if (shark_anim > 4) {
-      shark_anim = -2;
-      if (flooded_anim > 4) flooded_anim = -2;
+    if (sharkAnimation > 4) {
+      sharkAnimation = -2;
+      if (floodedAnimation > 4) floodedAnimation = -2;
     }
   }
 }
 
-void anim_helico() {
-  if (helico_anim >  2) helico_anim = -1;
-  helico_anim++;
+void animHelicopter() {
+  if (helicopterAnimation >  2) helicopterAnimation = -1;
+  helicopterAnimation++;
 }
 
-void anim_flooded() {
-  if ((moveTick <= 0) && (flooded_anim < 6)) flooded_anim++;
+void animFlooded() {
+  if ((moveTick <= 0) && (floodedAnimation < 6)) floodedAnimation++;
 }
 
-void test_Barque(uint8_t colonne, uint8_t para_courant) {
-  int count;
-  // Test si la barque est sous le para => score ou passe le para en mode nageur (colonne théorique: 4) ...
-  for (count = para_courant; count < nb_Parachutes_launched ; count++) {
+void testBoat(uint8_t colonne, uint8_t para_courant) {
+  // Test if boat is unde the paratrooper => score or tansform the para as swimmer ...
+  for (size_t count = para_courant; count < nbParachutesLaunched ; count++) {
     parachutes[count] = parachutes[count + 1];
-    nb_Parachutes_launched --;
+    nbParachutesLaunched --;
   }
-  if (colonne == 1 + player.sprite_index ) {
-    score ++;
+  if (colonne == 1 + player.spriteIndex ) {
+    ++score;
     gb.sound.playOK();
   } else {
-    misses++;
+    ++misses;
     gb.sound.playCancel();
-    flooded_anim = 2 - colonne;
-    shark_anim = 2 - colonne;
+    floodedAnimation = 2 - colonne;
+    sharkAnimation = 2 - colonne;
   }
 }
 
-void anim_para() {
-  uint8_t compteur;
+void animPara() {
   if (moveTick <= 0) {
-    for (compteur = 0 ; compteur < nb_Parachutes_launched ; compteur++)  {
+    for (size_t compteur = 0 ; compteur < nbParachutesLaunched ; ++compteur)  {
       if (parachutes[compteur] > -1) {
-        if ((parachutes[compteur] < 6) || ((parachutes[compteur] > 6) && (parachutes[compteur] < 12)) || ((parachutes[compteur] > 12) && (parachutes[compteur] < 17)))  {
-          parachutes[compteur]++;  // Next step fo para fall
+        if ((parachutes[compteur] < (firstSpriteColonne1-1)) || ((parachutes[compteur] >= firstSpriteColonne1) && (parachutes[compteur] < (firstSpriteColonne1-1))) || ((parachutes[compteur] >= firstSpriteColonne2) && (parachutes[compteur] < lastSpriteColonne2)))  {
+          ++parachutes[compteur];  // Next step fo para fall
           gb.sound.playTick();
-        } else if (parachutes[compteur] == 6) {
-          test_Barque(1, compteur);
-        } else if (parachutes[compteur] == 12) {
-          test_Barque(2, compteur);
-        } else if (parachutes[compteur] == 17) {
-          test_Barque(3, compteur);
+        } else if (parachutes[compteur] == (firstSpriteColonne1 - 1)) {
+          testBoat(1, compteur);   // Test if paratrooper is at last step of colonne 0
+        } else if (parachutes[compteur] == (firstSpriteColonne2 - 1)) {
+          testBoat(2, compteur);   // Test if paratrooper is at last step of colonne 1
+        } else if (parachutes[compteur] == lastSpriteColonne2) {
+          testBoat(3, compteur);   // Test if paratrooper is at last step of colonne 2
         }
       }
     }
@@ -414,8 +281,6 @@ void anim_para() {
 // -------------------------------------------------------------------------
 
 void drawScreen() {
-  // the number of horizontal slices to be cut is calculated
-  uint8_t slices = SCREEN_HEIGHT / SLICE_HEIGHT;
   // declares a pointer that will alternate between the two memory buffers
   uint16_t* buffer;
   // declares the top border of current slice
@@ -425,39 +290,39 @@ void drawScreen() {
     // buffers are switched according to the parity of sliceIndex
     buffer = sliceIndex % 2 == 0 ? buffer1 : buffer2;
     // the top border of the current slice is calculated
-    sliceY = sliceIndex * SLICE_HEIGHT;
+    sliceY = sliceIndex * sliceHeight;
 
     // starts by drawing the background
     switch (gameState) {
 
-      case STATE_HOME: // Start screen
+      case GameState::stateHome: // Start screen
         if (gb.buttons.released(BUTTON_A) || gb.buttons.released(BUTTON_B)) {
           initGame();
           return;
         } else {
-          memcpy(buffer, SPLATCHSCREEN + sliceY * SCREEN_WIDTH, 2 * SCREEN_WIDTH * SLICE_HEIGHT);
+          memcpy(buffer, SPLATCHSCREEN + sliceY * screenWidth, 2 * screenWidth * sliceHeight);
         }
         break;
 
-      case STATE_GAME_OVER:
+      case GameState::stateGameOver: // GameOver screen
         if (gb.buttons.released(BUTTON_A) || gb.buttons.released(BUTTON_B)) {
-          gameState = STATE_HOME;
+          gameState = GameState::stateHome;
           return;
         } else {
-          memcpy(buffer, BACKGROUND + sliceY * SCREEN_WIDTH, 2 * SCREEN_WIDTH * SLICE_HEIGHT);
+          memcpy(buffer, BACKGROUND + sliceY * screenWidth, 2 * screenWidth * sliceHeight);
           // and finally draws the pause sprite
-          drawText(Sprite_gameOver, sliceY, buffer, 53, 60);
+          drawText(spriteGameOver, sliceY, buffer, 53, 60);
         }
         break;
 
-      case STATE_PAUSE:
+      case GameState::statePause:  // Pause screen
         if (gb.buttons.released(BUTTON_A) || gb.buttons.released(BUTTON_B)) {
-          gameState = STATE_RUN;
+          gameState = GameState::stateRun;
           return;
         } else {
-          memcpy(buffer, BACKGROUND + sliceY * SCREEN_WIDTH, 2 * SCREEN_WIDTH * SLICE_HEIGHT);
+          memcpy(buffer, BACKGROUND + sliceY * screenWidth, 2 * screenWidth * sliceHeight);
           // and finally draws the pause sprite
-          drawText(Sprite_pause, sliceY, buffer, 66, 60);
+          drawText(spritePause, sliceY, buffer, 66, 60);
         }
         break;
     }
@@ -466,7 +331,7 @@ void drawScreen() {
     // to the DMA controller has taken place
     if (sliceIndex != 0) waitForPreviousDraw();
     // after which we can then send the current buffer
-    customDrawBuffer(0, sliceY, buffer, SCREEN_WIDTH, SLICE_HEIGHT);
+    customDrawBuffer(0, sliceY, buffer, screenWidth, sliceHeight);
   }
 
   // always wait until the DMA transfer is completed
@@ -475,40 +340,34 @@ void drawScreen() {
 }
 
 void draw() {
-  // the number of horizontal slices to be cut is calculated
-  uint8_t slices = SCREEN_HEIGHT / SLICE_HEIGHT;
-  // declares a pointer that will alternate between the two memory buffers
+  // Declares a pointer that will alternate between the two memory buffers
   uint16_t* buffer;
-  // declares the top border of current slice
+  // Declares the top border of current slice
   uint8_t sliceY;
-  // then we go through each slice one by one
+  // Go through each slice one by one
   for (uint8_t sliceIndex = 0; sliceIndex < slices; sliceIndex++) {
-    // buffers are switched according to the parity of sliceIndex
+    // Buffers are switched according to the parity of sliceIndex
     buffer = sliceIndex % 2 == 0 ? buffer1 : buffer2;
-    // the top border of the current slice is calculated
-    sliceY = sliceIndex * SLICE_HEIGHT;
+    // Top border of the current slice is calculated
+    sliceY = sliceIndex * sliceHeight;
 
-    // starts by drawing the background
-    memcpy(buffer, BACKGROUND + sliceY * SCREEN_WIDTH, 2 * SCREEN_WIDTH * SLICE_HEIGHT);
+    // Starts by drawing the background
+    memcpy(buffer, BACKGROUND + sliceY * screenWidth, 2 * screenWidth * sliceHeight);
 
-    // below are commented lines to display other screens (spritesheets, splatchscreen, ...)
-    //       memcpy(buffer, SPRITESHEET_A + sliceY * SCREEN_WIDTH, 2 * SCREEN_WIDTH * SLICE_HEIGHT);
-    //       memcpy(buffer, SPRITESHEET_B + sliceY * SCREEN_WIDTH, 2 * SCREEN_WIDTH * SLICE_HEIGHT);
-    //       memcpy(buffer, SPLATCHSCREEN + sliceY * SCREEN_WIDTH, 2 * SCREEN_WIDTH * SLICE_HEIGHT);
 
-    // then draws helico (a static sprite)
-    drawSprite(helico, sliceY, buffer);
+    // then draws helicopter (a static sprite)
+    drawSprite(helicopter, sliceY, buffer);
 
     // then draw blades
-    if ((helico_anim == 1) || (helico_anim == 3)) {
+    if ((helicopterAnimation == 1) || (helicopterAnimation == 3)) {
       drawSprite(blades[0], sliceY, buffer);
       drawSprite(blades[1], sliceY, buffer);
     }
-    if (helico_anim == 2) {
+    if (helicopterAnimation == 2) {
       drawSprite(blades[2], sliceY, buffer);
       drawSprite(blades[3], sliceY, buffer);
     }
- 
+
     if (misses > 0) {
       drawSprite(miss[0], sliceY, buffer);
       drawSprite(miss[1], sliceY, buffer);
@@ -520,59 +379,55 @@ void draw() {
       }
     }
 
-    // then draw para
+    // Draw parachutes
     uint8_t compteur;
-    for (compteur = 0 ; compteur < nb_Parachutes_launched ; compteur++) drawSprite(para[parachutes[compteur]], sliceY, buffer);
+    for (compteur = 0 ; compteur < nbParachutesLaunched ; compteur++) drawSprite(para[parachutes[compteur]], sliceY, buffer);
 
-    // then draw flooded
-    if ((flooded_anim > -1) && (flooded_anim < 6)) drawSprite(flooded[flooded_anim], sliceY, buffer);
+    // Draw flooded
+    if ((floodedAnimation > -1) && (floodedAnimation < 6)) drawSprite(flooded[floodedAnimation], sliceY, buffer);
 
-    // then draw shark if needed
-    if ((shark_anim > -1)&& (flooded_anim < 6)) drawSprite(shark[shark_anim], sliceY, buffer);
+    // Draw shark if needed
+    if ((sharkAnimation > -1) && (floodedAnimation < 6)) drawSprite(shark[sharkAnimation], sliceY, buffer);
 
-    // and finally draws the player's avatar
-    drawSprite(barque[player.sprite_index], sliceY, buffer);
+    // Draws the boat of the player
+    drawSprite(boat[player.spriteIndex], sliceY, buffer);
 
-    // then draw score
+    // Draw score
     drawScore(score, sliceY, buffer);
 
-    // then we make sure that the sending of the previous buffer
-    // to the DMA controller has taken place
+    // Verify that previous buffer has been sent to the DMA controller
     if (sliceIndex != 0) waitForPreviousDraw();
-    // after which we can then send the current buffer
-    customDrawBuffer(0, sliceY, buffer, SCREEN_WIDTH, SLICE_HEIGHT);
+    // Then send the current buffer
+    customDrawBuffer(0, sliceY, buffer, screenWidth, sliceHeight);
   }
 
-  // always wait until the DMA transfer is completed
-  // for the last slice before entering the next cycle
+  // Wait until the DMA transfer is completed before entering the next cycle
   waitForPreviousDraw();
 }
 
 void drawSprite(Sprite sprite, uint8_t sliceY, uint16_t* buffer) {
-  // we check first of all that the intersection between
-  // the sprite and the current slice is not empty
-  if (sliceY < sprite.y + sprite.h && sprite.y < sliceY + SLICE_HEIGHT) {
-    // determines the boundaries of the sprite surface within the current slice
-    uint8_t  xmin = sprite.x;
+  // Check if sprite has one part to show on the current slice
+  if (sliceY < sprite.y + sprite.h && sprite.y < sliceY + sliceHeight) {
+    // Determines the boundaries of the sprite surface within the current slice
+    uint8_t  xMin = sprite.x;
     uint8_t  xmax = sprite.x + sprite.w - 1;
-    uint8_t  ymin = sprite.y < sliceY ? sliceY : sprite.y;
-    uint8_t  ymax = sprite.y + sprite.h >= sliceY + SLICE_HEIGHT ? sliceY + SLICE_HEIGHT - 1 : sprite.y + sprite.h - 1;
-
+    uint8_t  yMin = sprite.y < sliceY ? sliceY : sprite.y;
+    uint8_t  yMax = sprite.y + sprite.h >= sliceY + sliceHeight ? sliceY + sliceHeight - 1 : sprite.y + sprite.h - 1;
     uint8_t  px, py;
     uint16_t color;
-    // goes through the sprite pixels to be drawn
-    for (py = ymin; py <= ymax; py++) {
-      for (px = xmin; px <= xmax; px++) {
-        // picks the pixel color from the spritesheet
-        if (sprite.spritesheet == SC_A) {
-          color = SPRITESHEET_A[px + py * SCREEN_WIDTH];
+    // Display the sprite pixels to be drawn
+    for (py = yMin; py <= yMax; py++) {
+      for (px = xMin; px <= xmax; px++) {
+        // Picks the pixel color from the spritesheet
+        if (sprite.spritesheet == idSpritesheetA) {
+          color = SPRITESHEET_A[px + py * screenWidth];
         } else {
-          color = SPRITESHEET_B[px + py * SCREEN_WIDTH];
+          color = SPRITESHEET_B[px + py * screenWidth];
         }
-        // and if it is different from the transparency color
-        if (color != TRANS_COLOR) {
-          // copies the color code into the rendering buffer
-          buffer[px + (py - sliceY) * SCREEN_WIDTH] = color;
+        // It colo is different from the transparency color
+        if (color != transColor) {
+          // Copies the color code into the rendering buffer
+          buffer[px + (py - sliceY) * screenWidth] = color;
         }
       }
     }
@@ -580,84 +435,67 @@ void drawSprite(Sprite sprite, uint8_t sliceY, uint16_t* buffer) {
 }
 
 void drawText(Sprite sprite, uint8_t sliceY, uint16_t* buffer, uint8_t x, uint8_t y) {
-  if (sliceY < y + sprite.h && y < sliceY + SLICE_HEIGHT) {
-    uint8_t xmin = x;
+  if (sliceY < y + sprite.h && y < sliceY + sliceHeight) {
+    uint8_t xMin = x;
     uint8_t xmax = x + sprite.w - 1;
-    uint8_t ymin = y < sliceY ? sliceY : y;
-    uint8_t ymax = y + sprite.h >= sliceY + SLICE_HEIGHT ? sliceY + SLICE_HEIGHT - 1 : y + sprite.h - 1;
+    uint8_t yMin = y < sliceY ? sliceY : y;
+    uint8_t yMax = y + sprite.h >= sliceY + sliceHeight ? sliceY + sliceHeight - 1 : y + sprite.h - 1;
 
     uint8_t  px, py, sx, sy;
     uint16_t color;
 
-    for (py = ymin; py <= ymax; py++) {
+    for (py = yMin; py <= yMax; ++py) {
       sy = py - y + sprite.y;
-      for (px = xmin; px <= xmax; px++) {
-        sx = px - xmin + sprite.x;
-        color = SPRITESHEET_A[sx + sy * SCREEN_WIDTH];
-        if (color != TRANS_COLOR) {
-          buffer[px + (py - sliceY) * SCREEN_WIDTH] = color;
+      for (px = xMin; px <= xmax; ++px) {
+        sx = px - xMin + sprite.x;
+        color = SPRITESHEET_A[sx + sy * screenWidth];
+        if (color != transColor) {
+          buffer[px + (py - sliceY) * screenWidth] = color;
         }
       }
     }
   }
 }
 
-void drawScore(uint16_t Ascore, uint8_t sliceY, uint16_t* buffer) {
+void drawScore(uint16_t displayScore, uint8_t sliceY, uint16_t* buffer) {
   // we check first of all that the intersection between
   // the sprite and the current slice is not empty
-  if (sliceY < 20 && sliceY + SLICE_HEIGHT > 11 ) {
+  if (sliceY < 20 && sliceY + sliceHeight > 11 ) {
     // determines the boundaries of the sprite surface within the current slice
-    uint8_t  xmin = 12;
-    uint8_t  ymin = 12 < sliceY ? sliceY : 12;
-    uint8_t  ymax = 19 >= sliceY + SLICE_HEIGHT ? sliceY + SLICE_HEIGHT - 1 : 18;
-    uint8_t  px, py;
-    uint16_t temp, temp2;
+    uint8_t  xMin = 12;
+    uint8_t  yMin = (12 < sliceY) ? sliceY : 12;
+    uint8_t  yMax = (19 >= sliceY + sliceHeight) ? sliceY + sliceHeight - 1 : 18;
     uint16_t color;
-    // goes through the sprite pixels to be drawn
-    for (py = ymin; py <= ymax; py++) {
-      for (px = 1; px <= 5; px++) {
-        // draw thousands
-        temp = Ascore / 1000;
-        temp2 = Ascore % 1000;
-        // picks the pixel color from the spritesheet
-        color = SPRITESHEET_A[px + 6 * temp + (py - 11) * SCREEN_WIDTH];
-        // and if it is different from the transparency color
-        if (color != TRANS_COLOR) {
-          // copies the color code into the rendering buffer
-          buffer[xmin + px + (py - sliceY) * SCREEN_WIDTH] = color;
-        }
-        // draw hundreds
-        temp = temp2 / 100;
-        temp2 = temp2 % 100;
-        // picks the pixel color from the spritesheet
-        color = SPRITESHEET_A[px + 6 * temp + (py - 11) * SCREEN_WIDTH];
-        // and if it is different from the transparency color
-        if (color != TRANS_COLOR) {
-          // copies the color code into the rendering buffer
-          buffer[xmin + 6 + px + (py - sliceY) * SCREEN_WIDTH] = color;
-        }
-        // draw decades
-        temp = temp2 / 10;
-        temp2 = temp2 % 10;
-        // picks the pixel color from the spritesheet
-        color = SPRITESHEET_A[px + 6 * temp + (py - 11) * SCREEN_WIDTH];
-        // and if it is different from the transparency color
-        if (color != TRANS_COLOR) {
-          // copies the color code into the rendering buffer
-          buffer[xmin + 12 + px + (py - sliceY) * SCREEN_WIDTH] = color;
-        }
-        // draw units
-        // picks the pixel color from the spritesheet
-        color = SPRITESHEET_A[px + 6 * temp2 + (py - 11) * SCREEN_WIDTH];
-        // and if it is different from the transparency color
-        if (color != TRANS_COLOR) {
-          // copies the color code into the rendering buffer
-          buffer[xmin + 18 + px + (py - sliceY) * SCREEN_WIDTH] = color;
+    uint16_t remainder = displayScore;
+
+    // Draw each digit of the score
+    for (uint16_t divisor = 1000; divisor > 0; divisor /= 10)     {  // The limit is 4 because 10000 is pow(10, 4)
+      uint16_t quotient = (remainder / divisor);
+      remainder = (remainder % divisor);
+      xMin += 6;
+      // Go through the sprite pixels to be drawn
+      for (uint8_t py = yMin; py <= yMax; ++py)   {
+        for (uint8_t px = 1; px <= 5; ++px)   {
+
+          // Calculate the colour offset
+          size_t colourIndex = (px + (6 * quotient) + ((py - 11) * screenWidth));
+
+          // Pick the pixel colour from the spritesheet
+          uint16_t colour = SPRITESHEET_A[colourIndex];
+
+          // If it is not the transparency colour
+          if (colour != transColor)     {
+            // Calculate the colour offset
+            size_t bufferIndex = (xMin + px + ((py - sliceY) * screenWidth));
+            // Copy the colour code into the rendering buffer
+            buffer[bufferIndex] = colour;
+          }
         }
       }
     }
   }
 }
+
 // -------------------------------------------------------------------------
 // Memory transfer to DMA controller
 // -------------------------------------------------------------------------
