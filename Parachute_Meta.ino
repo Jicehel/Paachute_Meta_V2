@@ -178,11 +178,13 @@ void update() {
   } else {
     --spawnCount;
     if ((spawnCount < 1) && (random(6 - (score / 200)) < 4)) {   // Check if we launch a new paratrooper
-      size_t spriteColumn = random(0, 3);
-      parachutes[parachuteLaunchCount] = firstSpriteColumn[spriteColumn];
-      ++parachuteLaunchCount;
-      spawnCount = spawnDelay - int(score / 60);
-      if (spawnCount < 2) spawnCount = 2;
+      if (parachuteLaunchCount < 9) {
+        size_t spriteColumn = random(0, 3);
+        parachutes[parachuteLaunchCount] = firstSpriteColumn[spriteColumn];
+        ++parachuteLaunchCount;
+        spawnCount = spawnDelay - int(score / 60);
+        if (spawnCount < 2) spawnCount = 2;
+      }
     }
     moveTick = speedMax - (score / 75);
   }
@@ -236,7 +238,7 @@ void testBoat(uint8_t column, uint8_t paraCourant) {
 void animateParatrooper() {
   if (moveTick <= 0) {
     for (size_t count = 0 ; count < parachuteLaunchCount ; ++count)  {
-      uint8_t p;
+      uint8_t p = parachutes[count];
       if (p > -1) {
         if (p == (firstSpriteColumn[1] - 1))
         {
