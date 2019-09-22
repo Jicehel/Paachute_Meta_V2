@@ -60,11 +60,11 @@ bool drawPending = false;
 void setup() {
   // initializes the META
   gb.begin();
-  SerialUSB.begin(9600);
+  // SerialUSB.begin(9600);
   // default screen buffer won't be used
   // so it must be set to 0x0 pixels
   gb.display.init(0, 0, ColorMode::rgb565);
-  gameState = GameState::stateHome;
+  gameState = GameState::home;
 }
 
 
@@ -75,13 +75,13 @@ void setup() {
 void initGame() {
 
   gb.lights.fill(BLACK);
-  gameState = GameState::stateRun;
+  gameState = GameState::run;
   gb.sound.playTick();
   misses = 0;
   score = 0;
   player.spriteIndex = 0;
   spawnDelay = 4;       // Delay before next possibility to launch a para
-  sharkAnimation = -2;  
+  sharkAnimation = -2;
   floodedAnimation = -2;
   speedMax = 25;   // Number of cycles before update
   helicopterAnimation = 0;
@@ -89,7 +89,7 @@ void initGame() {
   speedBlades = 5;
   moveTick = speedMax;
   spawnCount = spawnDelay;
-  nbParachutesLaunched = 0;
+  parachuteLaunchCount = 0;
   for (auto &value : parachutes) value = -1;
 }
 
@@ -104,7 +104,7 @@ void loop() {
 
   switch (gameState) {
 
-    case GameState::stateHome: // Start screen
+    case GameState::home: // Start screen
       if ((gb.buttons.released(BUTTON_A)) || (gb.buttons.released(BUTTON_B))) {
         initGame();
       } else {
@@ -112,28 +112,28 @@ void loop() {
       }
       break;
 
-    case GameState::stateRun: // Game running
+    case GameState::run: // Game running
       // a classic sequence :)
-      if (misses == 3) gameState = GameState::stateGameOver;
+      if (misses == 3) gameState = GameState::gameOver;
       else {
         update();
         draw();
       }
       break;
 
-    case GameState::stateGameOver:  // GameOver screen
+    case GameState::gameOver:  // GameOver screen
       if ((gb.buttons.released(BUTTON_A)) || (gb.buttons.released(BUTTON_B))) {
-        gameState = GameState::stateHome;
+        gameState = GameState::home;
         gb.sound.play("gameOver.wav");
       } else {
         drawScreen();
       }
       break;
 
-    case GameState::statePause: // Pause Game
+    case GameState::pauseScreen: // pauseScreen Game
       if ((gb.buttons.released(BUTTON_A)) || (gb.buttons.released(BUTTON_B))) {
-        gameState = GameState::stateRun;
-        gb.sound.play("pause.wav");
+        gameState = GameState::run;
+        gb.sound.play("pauseScreen.wav");
       } else {
         drawScreen();
       }
@@ -161,30 +161,28 @@ void update() {
     gb.sound.playTick();
   }
   if ((gb.buttons.released(BUTTON_A)) || (gb.buttons.released(BUTTON_B))) {
-    gameState = GameState::statePause;
-    gb.sound.play("pause.wav");
+    gameState = GameState::pauseScreen;
+    gb.sound.play("pauseScreen.wav");
   }
 
   // -------------------------------------------------------------------------
   // Anim objects
   // -------------------------------------------------------------------------
 
-  animShark();
-  animHelicopter();
-  animPara();       // Animate paratrooper
-  // anim_helico(); // Animtie helicopter
-  if (floodedAnimation > -2) animFlooded(); // Animate Flooded if needed
+  animateShark();
+  animateHelicopter();
+  animateParatrooper();       // Animate paratrooper
+  if (floodedAnimation > -2) animateFlooded(); // Animate Flooded if needed
   if (moveTick > 0) {
     --moveTick;
   } else {
     --spawnCount;
-    if ((spawnCount < 1) && (random(6 - (score / 200)) < 4)) {   // Check if we launch a new paatrooper
-      uint8_t temp = random(0, 3);
-      if (temp == 0) parachutes[nbParachutesLaunched] = firstSpriteColonne0;
-      else if (temp == 1) parachutes[nbParachutesLaunched] = firstSpriteColonne1;
-      else if (temp == 2) parachutes[nbParachutesLaunched] = firstSpriteColonne2;
-      ++nbParachutesLaunched;
+    if ((spawnCount < 1) && (random(6 - (score / 200)) < 4)) {   // Check if we launch a new paratrooper
+      size_t spriteColumn = random(0, 3);
+      parachutes[parachuteLaunchCount] = firstSpriteColumn[spriteColumn];
+      ++parachuteLaunchCount;
       spawnCount = spawnDelay - int(score / 60);
+      if (spawnCount < 2) spawnCount = 2;
     }
     moveTick = speedMax - (score / 75);
   }
@@ -196,28 +194,7 @@ void update() {
   }
 }
 
-/* void debug(char* message) {
-  SerialUSB.print(message);
-  SerialUSB.print(" - nbParachutesLaunched : ");
-  SerialUSB.print(nbParachutesLaunched);
-  SerialUSB.print(" - moveTick: ");
-  SerialUSB.print(moveTick);
-  SerialUSB.print(" - spawnCount: ");
-  SerialUSB.println(spawnCount);
-
-  uint8_t compteur;
-  SerialUSB.print("Parachute : ");
-  for (compteur = 0 ; compteur < nbParachutesLaunched ; compteur++)  {
-    SerialUSB.print("compteur: ");
-    SerialUSB.print(compteur);
-    SerialUSB.print(" - ");
-    SerialUSB.print(parachutes[compteur]);
-    SerialUSB.print("; ");
-  }
-  SerialUSB.println("");
-  } */
-
-void animShark() {
+void animateShark() {
   if (moveTick <= 0) {
     if ((sharkAnimation > -2) || ((sharkAnimation == -2) && (random(0, 50) < 3))) {
       ++sharkAnimation;
@@ -230,45 +207,53 @@ void animShark() {
   }
 }
 
-void animHelicopter() {
+void animateHelicopter() {
   if (helicopterAnimation >  2) helicopterAnimation = -1;
   helicopterAnimation++;
 }
 
-void animFlooded() {
+void animateFlooded() {
   if ((moveTick <= 0) && (floodedAnimation < 6)) floodedAnimation++;
 }
 
-void testBoat(uint8_t colonne, uint8_t para_courant) {
+void testBoat(uint8_t column, uint8_t paraCourant) {
   // Test if boat is unde the paratrooper => score or tansform the para as swimmer ...
-  for (size_t count = para_courant; count < nbParachutesLaunched ; count++) {
+  for (size_t count = paraCourant; count < parachuteLaunchCount ; count++) {
     parachutes[count] = parachutes[count + 1];
-    nbParachutesLaunched --;
+    parachuteLaunchCount --;
   }
-  if (colonne == 1 + player.spriteIndex ) {
+  if (column == 1 + player.spriteIndex ) {
     ++score;
     gb.sound.playOK();
   } else {
     ++misses;
     gb.sound.playCancel();
-    floodedAnimation = 2 - colonne;
-    sharkAnimation = 2 - colonne;
+    floodedAnimation = 2 - column;
+    sharkAnimation = 2 - column;
   }
 }
 
-void animPara() {
+void animateParatrooper() {
   if (moveTick <= 0) {
-    for (size_t compteur = 0 ; compteur < nbParachutesLaunched ; ++compteur)  {
-      if (parachutes[compteur] > -1) {
-        if ((parachutes[compteur] < (firstSpriteColonne1-1)) || ((parachutes[compteur] >= firstSpriteColonne1) && (parachutes[compteur] < (firstSpriteColonne1-1))) || ((parachutes[compteur] >= firstSpriteColonne2) && (parachutes[compteur] < lastSpriteColonne2)))  {
-          ++parachutes[compteur];  // Next step fo para fall
+    for (size_t count = 0 ; count < parachuteLaunchCount ; ++count)  {
+      uint8_t p;
+      if (p > -1) {
+        if (p == (firstSpriteColumn[1] - 1))
+        {
+          testBoat(1, count);   // Test if paratrooper is at last step of colonne 0
+        }
+        else if (p == (firstSpriteColumn[2] - 1))
+        {
+          testBoat(2, count);   // Test if paratrooper is at last step of colonne 1
+        }
+        else if (p == firstSpriteColumn[3])
+        {
+          testBoat(3, count);   // Test if paratrooper is at last step of colonne 2
+        }
+        else if (p < firstSpriteColumn[3])
+        {
+          ++parachutes[count];  // Next step for paratrooper fall
           gb.sound.playTick();
-        } else if (parachutes[compteur] == (firstSpriteColonne1 - 1)) {
-          testBoat(1, compteur);   // Test if paratrooper is at last step of colonne 0
-        } else if (parachutes[compteur] == (firstSpriteColonne2 - 1)) {
-          testBoat(2, compteur);   // Test if paratrooper is at last step of colonne 1
-        } else if (parachutes[compteur] == lastSpriteColonne2) {
-          testBoat(3, compteur);   // Test if paratrooper is at last step of colonne 2
         }
       }
     }
@@ -281,49 +266,33 @@ void animPara() {
 // -------------------------------------------------------------------------
 
 void drawScreen() {
-  // declares a pointer that will alternate between the two memory buffers
-  uint16_t* buffer;
-  // declares the top border of current slice
-  uint8_t sliceY;
-  // then we go through each slice one by one
+
+  // Go through each slice one by one
   for (uint8_t sliceIndex = 0; sliceIndex < slices; sliceIndex++) {
+
     // buffers are switched according to the parity of sliceIndex
-    buffer = sliceIndex % 2 == 0 ? buffer1 : buffer2;
+    uint16_t* buffer = sliceIndex % 2 == 0 ? buffer1 : buffer2;
+
     // the top border of the current slice is calculated
-    sliceY = sliceIndex * sliceHeight;
+    uint8_t sliceY = sliceIndex * sliceHeight;
 
     // starts by drawing the background
     switch (gameState) {
 
-      case GameState::stateHome: // Start screen
-        if (gb.buttons.released(BUTTON_A) || gb.buttons.released(BUTTON_B)) {
-          initGame();
-          return;
-        } else {
-          memcpy(buffer, SPLATCHSCREEN + sliceY * screenWidth, 2 * screenWidth * sliceHeight);
-        }
+      case GameState::home: // Start screen
+        memcpy(buffer, splachScreen + sliceY * screenWidth, 2 * screenWidth * sliceHeight);
         break;
 
-      case GameState::stateGameOver: // GameOver screen
-        if (gb.buttons.released(BUTTON_A) || gb.buttons.released(BUTTON_B)) {
-          gameState = GameState::stateHome;
-          return;
-        } else {
-          memcpy(buffer, BACKGROUND + sliceY * screenWidth, 2 * screenWidth * sliceHeight);
-          // and finally draws the pause sprite
-          drawText(spriteGameOver, sliceY, buffer, 53, 60);
-        }
+      case GameState::gameOver: // GameOver screen
+        memcpy(buffer, background + sliceY * screenWidth, 2 * screenWidth * sliceHeight);
+        // and finally draws the pauseScreen sprite
+        drawText(spriteGameOver, sliceY, buffer, 53, 60);
         break;
 
-      case GameState::statePause:  // Pause screen
-        if (gb.buttons.released(BUTTON_A) || gb.buttons.released(BUTTON_B)) {
-          gameState = GameState::stateRun;
-          return;
-        } else {
-          memcpy(buffer, BACKGROUND + sliceY * screenWidth, 2 * screenWidth * sliceHeight);
-          // and finally draws the pause sprite
-          drawText(spritePause, sliceY, buffer, 66, 60);
-        }
+      case GameState::pauseScreen:  // pauseScreen screen
+        memcpy(buffer, background + sliceY * screenWidth, 2 * screenWidth * sliceHeight);
+        // and finally draws the pauseScreen sprite
+        drawText(spritepauseScreen, sliceY, buffer, 66, 60);
         break;
     }
 
@@ -352,8 +321,7 @@ void draw() {
     sliceY = sliceIndex * sliceHeight;
 
     // Starts by drawing the background
-    memcpy(buffer, BACKGROUND + sliceY * screenWidth, 2 * screenWidth * sliceHeight);
-
+    memcpy(buffer, background + sliceY * screenWidth, 2 * screenWidth * sliceHeight);
 
     // then draws helicopter (a static sprite)
     drawSprite(helicopter, sliceY, buffer);
@@ -380,8 +348,7 @@ void draw() {
     }
 
     // Draw parachutes
-    uint8_t compteur;
-    for (compteur = 0 ; compteur < nbParachutesLaunched ; compteur++) drawSprite(para[parachutes[compteur]], sliceY, buffer);
+    for (uint8_t count = 0 ; count < parachuteLaunchCount ; count++) drawSprite(para[parachutes[count]], sliceY, buffer);
 
     // Draw flooded
     if ((floodedAnimation > -1) && (floodedAnimation < 6)) drawSprite(flooded[floodedAnimation], sliceY, buffer);
@@ -420,9 +387,9 @@ void drawSprite(Sprite sprite, uint8_t sliceY, uint16_t* buffer) {
       for (px = xMin; px <= xmax; px++) {
         // Picks the pixel color from the spritesheet
         if (sprite.spritesheet == idSpritesheetA) {
-          color = SPRITESHEET_A[px + py * screenWidth];
+          color = spritesheetA[px + py * screenWidth];
         } else {
-          color = SPRITESHEET_B[px + py * screenWidth];
+          color = spritesheetB[px + py * screenWidth];
         }
         // It colo is different from the transparency color
         if (color != transColor) {
@@ -448,7 +415,7 @@ void drawText(Sprite sprite, uint8_t sliceY, uint16_t* buffer, uint8_t x, uint8_
       sy = py - y + sprite.y;
       for (px = xMin; px <= xmax; ++px) {
         sx = px - xMin + sprite.x;
-        color = SPRITESHEET_A[sx + sy * screenWidth];
+        color = spritesheetA[sx + sy * screenWidth];
         if (color != transColor) {
           buffer[px + (py - sliceY) * screenWidth] = color;
         }
@@ -481,7 +448,7 @@ void drawScore(uint16_t displayScore, uint8_t sliceY, uint16_t* buffer) {
           size_t colourIndex = (px + (6 * quotient) + ((py - 11) * screenWidth));
 
           // Pick the pixel colour from the spritesheet
-          uint16_t colour = SPRITESHEET_A[colourIndex];
+          uint16_t colour = spritesheetA[colourIndex];
 
           // If it is not the transparency colour
           if (colour != transColor)     {

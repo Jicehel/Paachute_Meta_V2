@@ -62,8 +62,8 @@ constexpr Sprite shark[] = {
   { idSpritesheetB, 89 , 107,  25, 16 }   //  4
 };
 
-// the sprite pause
-constexpr Sprite spritePause = { idSpritesheetA, 1, 9, 28, 7 };
+// the sprite pauseScreen
+constexpr Sprite spritepauseScreen = { idSpritesheetA, 1, 9, 28, 7 };
 
 // the sprite Game Over
 constexpr Sprite spriteGameOver = { idSpritesheetA, 1, 17, 53, 7 };

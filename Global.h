@@ -11,23 +11,12 @@ constexpr uint8_t  sliceHeight  = 8;                    // Redefined the size of
 constexpr uint8_t  slices = screenHeight / sliceHeight; // Number of horizontal slices to be cut is calculated
 constexpr uint16_t transColor   = 0xdfff;
 
-
-// -------------------------------------------------------------------------
 // Define value for spritesheet to use
-// -------------------------------------------------------------------------
-
 constexpr uint8_t  idSpritesheetA = 0;
 constexpr uint8_t  idSpritesheetB = 1;
 
-
-// -------------------------------------------------------------------------
-// Define value of the first sprite of each colonne of paachutiste
-// -------------------------------------------------------------------------
-
-constexpr uint8_t  firstSpriteColonne0 = 0;
-constexpr uint8_t  firstSpriteColonne1 = 7;
-constexpr uint8_t  firstSpriteColonne2 = 13;
-constexpr uint8_t  lastSpriteColonne2 = 17;
+// Define value of the first sprite of each column of paachutiste
+constexpr uint8_t  firstSpriteColumn[] { 0, 7, 13,17 };
 
 
 // -------------------------------------------------------------------------
@@ -41,7 +30,7 @@ int16_t  moveTick;
 int16_t  spawnDelay;
 int8_t   spawnCount;
 int8_t   speedMax;
-uint8_t  nbParachutesLaunched;
+uint8_t  parachuteLaunchCount;
 int8_t   parachutes[10];
 int8_t   helicopterAnimation;
 int8_t   sharkAnimation;
@@ -53,12 +42,12 @@ uint8_t  speedBlades;
 // -------------------------------------------------------------------------
 
 enum class GameState : uint8_t {
-  stateHome,
-  stateRun,
-  stateGameOver,
-  statePause
+  home,
+  run,
+  gameOver,
+  pauseScreen
 };
 
-GameState gameState {GameState::stateHome};
+GameState gameState {GameState::home};
 
 #endif
