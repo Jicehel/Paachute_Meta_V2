@@ -50,4 +50,16 @@ enum class GameState : uint8_t {
 
 GameState gameState {GameState::home};
 
+// -------------------------------------------------------------------------
+// Player definition
+// -------------------------------------------------------------------------
+
+struct Player {
+  uint8_t  spriteIndex;
+};
+
+Player player = {
+  0      // spriteIndex 0, the position at the left
+};
+
 #endif
