@@ -53,18 +53,22 @@ void loop() {
 
     case GameState::home: // Start screen
       homeState.update();
+      homeState.draw();
       break;
 
     case GameState::run: // Game running
       runState.update();
+      runState.draw();
       break;
 
     case GameState::gameOver:  // GameOver screen
       gameOverState.update();
+      gameOverState.draw();
       break;
 
     case GameState::pauseScreen: // pauseScreen Game
       pauseState.update();
+      pauseState.draw();
       break;
 
   }

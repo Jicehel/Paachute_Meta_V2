@@ -47,28 +47,9 @@ class HomeState {
     // -------------------------------------------------------------------------
 
     void draw()    {
-      // Go through each slice one by one
-      for (uint8_t sliceIndex = 0; sliceIndex < slices; sliceIndex++) {
 
-        // buffers are switched according to the parity of sliceIndex
-        uint16_t* buffer = sliceIndex % 2 == 0 ? buffer1 : buffer2;
+      drawBackground(splachScreen, spriteGameOver, 0, 0, false);  
 
-        // the top border of the current slice is calculated
-        uint8_t sliceY = sliceIndex * sliceHeight;
-
-        // starts by drawing the background
-        memcpy(buffer, splachScreen + sliceY * screenWidth, 2 * screenWidth * sliceHeight);
-
-        // then we make sure that the sending of the previous buffer
-        // to the DMA controller has taken place
-        if (sliceIndex != 0) waitForPreviousDraw();
-        // after which we can then send the current buffer
-        customDrawBuffer(0, sliceY, buffer, screenWidth, sliceHeight);
-      }
-
-      // always wait until the DMA transfer is completed
-      // for the last slice before entering the next cycle
-      waitForPreviousDraw();
     }
 };
 

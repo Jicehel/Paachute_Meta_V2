@@ -25,7 +25,6 @@ uint16_t buffer2[screenWidth * sliceHeight];
 bool drawPending = false;
 
 
-
 void drawSprite(Sprite sprite, uint8_t sliceY, uint16_t* buffer) {
   // Check if sprite has one part to show on the current slice
   if (sliceY < sprite.y + sprite.h && sprite.y < sliceY + sliceHeight) {
@@ -56,7 +55,6 @@ void drawSprite(Sprite sprite, uint8_t sliceY, uint16_t* buffer) {
 }
 
 
-
 void drawText(Sprite sprite, uint8_t sliceY, uint16_t* buffer, uint8_t x, uint8_t y) {
   if (sliceY < y + sprite.h && y < sliceY + sliceHeight) {
     uint8_t xMin = x;
@@ -79,7 +77,6 @@ void drawText(Sprite sprite, uint8_t sliceY, uint16_t* buffer, uint8_t x, uint8_
     }
   }
 }
-
 
 
 void drawScore(uint16_t displayScore, uint8_t sliceY, uint16_t* buffer) {
@@ -121,6 +118,7 @@ void drawScore(uint16_t displayScore, uint8_t sliceY, uint16_t* buffer) {
   }
 }
 
+
 // -------------------------------------------------------------------------
 // Memory transfer to DMA controller
 // -------------------------------------------------------------------------
@@ -143,4 +141,39 @@ void waitForPreviousDraw() {
     SPI.endTransaction();
     drawPending = false;
   }
+}
+
+
+void drawBackground(const uint16_t * background, const Sprite spriteToDisplay, uint8_t spriteX, uint8_t spriteY, boolean displaySprite)
+{
+    constexpr size_t bufferSize = (sizeof(uint16_t) * screenWidth * sliceHeight);
+
+    for (uint8_t sliceIndex = 0; sliceIndex < slices; sliceIndex++)
+    {
+        // buffers are switched according to the parity of sliceIndex
+        uint16_t * buffer = (sliceIndex % 2 == 0) ? buffer1 : buffer2;
+        
+        // the top border of the current slice is calculated
+        uint8_t sliceY = sliceIndex * sliceHeight;
+        
+        size_t backgroundOffset = (sliceY * screenWidth);
+
+        // starts by drawing the background
+        memcpy(buffer, &background[backgroundOffset], bufferSize);
+
+       // and finally draws the sprite if needed
+        if (displaySprite == true) drawText(spriteToDisplay, sliceY, buffer, spriteX, spriteY);
+
+        // then we make sure that the sending of the previous buffer
+        // to the DMA controller has taken place
+        if (sliceIndex != 0)
+            waitForPreviousDraw();
+    
+        // after which we can then send the current buffer
+        customDrawBuffer(0, sliceY, buffer, screenWidth, sliceHeight);
+    }
+
+    // always wait until the DMA transfer is completed
+    // for the last slice before entering the next cycle
+    waitForPreviousDraw();
 }
