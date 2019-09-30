@@ -20,10 +20,8 @@ class GameOverState {
     // Draw Game Over screen
     // -------------------------------------------------------------------------
 
-    void draw()    {
-
-      drawBackground(background, spriteGameOver, 53, 60, true);  
-    
+    void draw() {
+      drawBackground(background, spriteGameOver, 53, 60, true);
     }
 };
 
