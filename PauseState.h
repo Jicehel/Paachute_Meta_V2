@@ -13,8 +13,6 @@ class PauseState {
       if ((gb.buttons.released(BUTTON_A)) || (gb.buttons.released(BUTTON_B))) {
         gameState = GameState::run;
         gb.sound.play("pauseScreen.wav");
-      } else {
-        PauseState::draw();
       }
     }
 

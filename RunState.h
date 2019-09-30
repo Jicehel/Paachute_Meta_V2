@@ -60,7 +60,6 @@ class RunState {
             gb.sound.play("Chance.wav");
           }
         }
-        RunState::draw();
       }
     }
 

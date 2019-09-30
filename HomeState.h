@@ -12,8 +12,6 @@ class HomeState {
     {
       if ((gb.buttons.released(BUTTON_A)) || (gb.buttons.released(BUTTON_B))) {
         HomeState::initGame();
-      } else {
-        HomeState::draw();
       }
     }
 
