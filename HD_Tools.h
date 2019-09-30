@@ -86,7 +86,7 @@ void drawScore(uint16_t displayScore, uint8_t sliceY, uint16_t* buffer) {
     uint16_t remainder = displayScore;
 
     // Draw each digit of the score
-    for (uint16_t divisor = 1000; divisor > 0; divisor /= 10)     {  // The limit is 4 because 10000 is pow(10, 4)
+    for (uint16_t divisor = 10000; divisor > 0; divisor /= 10)     {  // The limit is 4 because 10000 is pow(10, 4)
       uint16_t quotient = (remainder / divisor);
       remainder = (remainder % divisor);
       xMin += 6;
