@@ -33,12 +33,11 @@ void drawSprite(Sprite sprite, uint8_t sliceY, uint16_t* buffer) {
     uint8_t  xmax = sprite.x + sprite.w - 1;
     uint8_t  yMin = sprite.y < sliceY ? sliceY : sprite.y;
     uint8_t  yMax = sprite.y + sprite.h >= sliceY + sliceHeight ? sliceY + sliceHeight - 1 : sprite.y + sprite.h - 1;
-    uint8_t  px, py;
-    uint16_t color;
     // Display the sprite pixels to be drawn
-    for (py = yMin; py <= yMax; py++) {
-      for (px = xMin; px <= xmax; px++) {
+    for (uint8_t py = yMin; py <= yMax; py++) {
+      for (uint8_t px = xMin; px <= xmax; px++) {
         // Picks the pixel color from the spritesheet
+        uint16_t color;
         if (sprite.spritesheet == idSpritesheetA) {
           color = spritesheetA[px + py * screenWidth];
         } else {
@@ -62,14 +61,11 @@ void drawText(Sprite sprite, uint8_t sliceY, uint16_t* buffer, uint8_t x, uint8_
     uint8_t yMin = y < sliceY ? sliceY : y;
     uint8_t yMax = y + sprite.h >= sliceY + sliceHeight ? sliceY + sliceHeight - 1 : y + sprite.h - 1;
 
-    uint8_t  px, py, sx, sy;
-    uint16_t color;
-
-    for (py = yMin; py <= yMax; ++py) {
-      sy = py - y + sprite.y;
-      for (px = xMin; px <= xmax; ++px) {
-        sx = px - xMin + sprite.x;
-        color = spritesheetA[sx + sy * screenWidth];
+    for (uint8_t py = yMin; py <= yMax; ++py) {
+      uint8_t sy = py - y + sprite.y;
+      for (uint8_t px = xMin; px <= xmax; ++px) {
+        uint8_t sx = px - xMin + sprite.x;
+        uint16_t color = spritesheetA[sx + sy * screenWidth];
         if (color != transColor) {
           buffer[px + (py - sliceY) * screenWidth] = color;
         }
@@ -87,7 +83,6 @@ void drawScore(uint16_t displayScore, uint8_t sliceY, uint16_t* buffer) {
     uint8_t  xMin = 12;
     uint8_t  yMin = (12 < sliceY) ? sliceY : 12;
     uint8_t  yMax = (19 >= sliceY + sliceHeight) ? sliceY + sliceHeight - 1 : 18;
-    uint16_t color;
     uint16_t remainder = displayScore;
 
     // Draw each digit of the score

@@ -65,16 +65,15 @@ class RunState {
 
 
     void draw() {
-      // Declares a pointer that will alternate between the two memory buffers
-      uint16_t* buffer;
-      // Declares the top border of current slice
-      uint8_t sliceY;
       // Go through each slice one by one
       for (uint8_t sliceIndex = 0; sliceIndex < slices; sliceIndex++) {
+        // Declares a pointer that will alternate between the two memory buffers
         // Buffers are switched according to the parity of sliceIndex
-        buffer = sliceIndex % 2 == 0 ? buffer1 : buffer2;
+        uint16_t * buffer = sliceIndex % 2 == 0 ? buffer1 : buffer2;
+
+        // Declares the top border of current slice
         // Top border of the current slice is calculated
-        sliceY = sliceIndex * sliceHeight;
+        uint8_t sliceY = sliceIndex * sliceHeight;
 
         // Starts by drawing the background
         memcpy(buffer, background + sliceY * screenWidth, 2 * screenWidth * sliceHeight);
