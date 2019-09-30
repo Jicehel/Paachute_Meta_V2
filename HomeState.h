@@ -8,12 +8,9 @@ class HomeState {
 
   public:
 
-    void update()
-    {
+    void update() {
       if ((gb.buttons.released(BUTTON_A)) || (gb.buttons.released(BUTTON_B))) {
         HomeState::initGame();
-      } else {
-        HomeState::draw();
       }
     }
 
@@ -39,17 +36,17 @@ class HomeState {
       moveTick = speedMax;
       spawnCount = spawnDelay;
       parachuteLaunchCount = 0;
-      for (auto &value : parachutes) value = -1;
+
+      for (auto &value : parachutes)
+        value = -1;
     }
 
     // -------------------------------------------------------------------------
     // Draw Titlescreen
     // -------------------------------------------------------------------------
 
-    void draw()    {
-
-      drawBackground(splachScreen, spriteGameOver, 0, 0, false);  
-
+    void draw() {
+      drawBackground(splachScreen, spriteGameOver, 0, 0, false);
     }
 };
 
